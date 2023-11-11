@@ -60,6 +60,9 @@ app.get('*', (req, res) => {
   } else if(req.url.includes("/demo/static")) {
     console.log(path.resolve(__dirname, 'build', req.path.replace('/demo/','')))
     res.sendFile(path.resolve(__dirname, 'build', req.path.replace('/demo/','')));
+  } else if(req.url.includes("/static")) {
+    console.log(path.resolve(__dirname, 'build', req.path.replace('/demo/','')))
+    res.sendFile(path.resolve(__dirname, 'build', req.path.replace('/demo/','')));
   } else {
     console.log(path.resolve(__dirname, 'build', 'index.html'))
     res.sendFile(path.resolve(__dirname, 'build', 'index.html'));
