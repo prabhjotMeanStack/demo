@@ -6,6 +6,7 @@ mongoose.connect(`mongodb+srv://admin:Wpadmin123@clst.a4aur.mongodb.net/demo?ret
   useUnifiedTopology: true,
   useCreateIndex: true,
 });
+console.log("in db file")
 mongoose.set("useCreateIndex", true);
 mongoose.set("useFindAndModify", false);
 mongoose.Promise = global.Promise;
