@@ -15,7 +15,7 @@
     "express-fileupload": "^1.4.2",
     "http": "^0.0.1-security",
     "md5": "^2.3.0",
-    "mongoose": "^5.0.0",
+    "mongoose": "^4.13.0",
     "path": "^0.12.7"
   }
 }
