@@ -1,0 +1,7 @@
+.history/
+**/node_modules/
+.history/
+node_modules/
+**/newrelic_agent.log
+.vscode/launch.json
+**/uploads/
