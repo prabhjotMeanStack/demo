@@ -1,17 +1,17 @@
 const mongoose = require("mongoose");
 
-const { ObjectId } = mongoose.Types;
+// const { ObjectId } = mongoose.Types;
 
 const answers = new mongoose.Schema(
   {
     question: { type: String, trim: true, required: true },
-    questionId: { type: ObjectId, ref:"questions" },
+    questionId: { type: String },
     answerOptions: { type: Array, default: [], required: true },
     selectedAnswer: { type: String, trim: true, required: true },
     description: { type: String, trim: true, required: true },
     categories: { type: Array, required: true, default:[] },
     skills: { type: Array, required: true, default:[] },
-    professionId: { type: ObjectId, ref: "profession" },
+    professionId: { type: String },
     ip: { type: String },
   },
   {
