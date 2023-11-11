@@ -55,14 +55,11 @@ app.get('*', (req, res) => {
     "/demo/robots.txt"
   ]
   if(allowedUrl.includes(req.url)) {
-    console.log(path.resolve(__dirname, 'build', req.path.replace('/demo/','')))
-    res.sendFile(path.resolve(__dirname, 'build', req.path.replace('/demo/','')));
-  } else if(req.url.includes("/demo/static")) {
-    console.log(path.resolve(__dirname, 'build', req.path.replace('/demo/','')))
-    res.sendFile(path.resolve(__dirname, 'build', req.path.replace('/demo/','')));
+    console.log(path.resolve(__dirname, 'build', req.path.replace('/','')))
+    res.sendFile(path.resolve(__dirname, 'build', req.path.replace('/','')));
   } else if(req.url.includes("/static")) {
-    console.log(path.resolve(__dirname, 'build', req.path.replace('/demo/','')))
-    res.sendFile(path.resolve(__dirname, 'build', req.path.replace('/demo/','')));
+    console.log(path.resolve(__dirname, 'build', req.path.replace('/','')))
+    res.sendFile(path.resolve(__dirname, 'build', req.path.replace('/','')));
   } else {
     console.log(path.resolve(__dirname, 'build', 'index.html'))
     res.sendFile(path.resolve(__dirname, 'build', 'index.html'));
