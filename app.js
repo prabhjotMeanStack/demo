@@ -32,33 +32,20 @@ const userRoutes = require("./controllers/user");
 app.use("/professions", professionRoutes);
 app.use("/questions", questionRoutes);
 app.use("/user", userRoutes);
-app.use("/demo/professions", professionRoutes);
-app.use("/demo/questions", questionRoutes);
-app.use("/demo/user", userRoutes);
 
-console.log(path.resolve(__dirname, 'build', 'index.html'))
 app.get('*', (req, res) => {
   let allowedUrl = [
     "/asset-manifest.json",
-    "asset-/demo/manifest.json",
     "/favicon.ico",
-    "/demo/favicon.ico",
     "/index.html",
-    "/demo/index.html",
     "/logo192.png",
-    "/demo/logo192.png",
     "/logo512.png",
-    "/demo/logo512.png",
     "/manifest.json",
-    "/demo/manifest.json",
     "/robots.txt",
-    "/demo/robots.txt"
   ]
   if(allowedUrl.includes(req.url)) {
-    console.log(path.resolve(__dirname, 'build', req.path.replace('/','')))
     res.sendFile(path.resolve(__dirname, 'build', req.path.replace('/','')));
   } else if(req.url.includes("/static")) {
-    console.log(path.resolve(__dirname, 'build', req.path.replace('/','')))
     res.sendFile(path.resolve(__dirname, 'build', req.path.replace('/','')));
   } else {
     console.log(path.resolve(__dirname, 'build', 'index.html'))
