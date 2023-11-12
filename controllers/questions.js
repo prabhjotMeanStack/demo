@@ -330,7 +330,7 @@ router.post("/upload", checkUserLoggedIn, async (req, res) => {
   }
 });
 
-router.post("/answer", checkUserLoggedIn, async (req, res) => {
+router.post("/answer", async (req, res) => {
   try {
     //  answers:{
     //   questionId: selectedOption range from 1-5
