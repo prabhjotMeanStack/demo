@@ -8,7 +8,7 @@ mongoose.connect(`mongodb+srv://admin:Wpadmin123@clst.a4aur.mongodb.net/demo?ret
 });
 console.log("in db file")
 // mongoose.set("useCreateIndex", true);
-mongoose.set("useFindAndModify", false);
+// mongoose.set("useFindAndModify", false);
 mongoose.Promise = global.Promise;
 const db = mongoose.connection;
 db.on("error", () => console.error("MongoDB connection error"));
