@@ -4,10 +4,10 @@ const mongoose = require("mongoose");
 mongoose.connect(`mongodb+srv://admin:Wpadmin123@clst.a4aur.mongodb.net/demo?retryWrites=true&w=majority`, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  useCreateIndex: true,
+  // useCreateIndex: true,
 });
 console.log("in db file")
-mongoose.set("useCreateIndex", true);
+// mongoose.set("useCreateIndex", true);
 mongoose.set("useFindAndModify", false);
 mongoose.Promise = global.Promise;
 const db = mongoose.connection;
