@@ -8,8 +8,8 @@ const router = express.Router();
 
 router.get("/all", async (req, res) => {
   try {
-    // const professions = await profession.find({ status: "Active" }, { professionName: 1, description: 1 });
-    return res.json({ message: "Professions Fetched", professions: [] });
+    const professions = await profession.find({ status: "Active" }, { professionName: 1, description: 1 });
+    return res.json({ message: "Professions Fetched", professions });
   } catch (error) {
     return res.status(500).json({ message: error.message || "Error while fetching professions" });
   }
