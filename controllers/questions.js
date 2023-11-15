@@ -358,26 +358,34 @@ router.post("/answer", async (req, res) => {
           professionWiseData[category] = {};
         }
         if (!professionWiseData.Overview[category]) {
-          professionWiseData.Overview[category] = 0;
+          professionWiseData.Overview[category] = {
+            marksAssigned: 0,
+            numberOfQuestions: 0,
+          };
         }
         for (const skill of question.skills) {
           if (!professionWiseData[category][skill]) {
-            professionWiseData[category][skill] = 0;
+            professionWiseData[category][skill] = {
+              marksAssigned: 0,
+              numberOfQuestions: 0,
+            };
           }
           let marksAssigned = 0;
           if (answers[question._id] == 1) {
             marksAssigned = 1;
           } else if (answers[question._id] == 2) {
-            marksAssigned = 3;
+            marksAssigned = 2;
           } else if (answers[question._id] == 3) {
-            marksAssigned = 5;
+            marksAssigned = 3;
           } else if (answers[question._id] == 4) {
-            marksAssigned = 7;
+            marksAssigned = 4;
           } else if (answers[question._id] == 5) {
-            marksAssigned = 9;
+            marksAssigned = 5;
           }
-          professionWiseData[category][skill] += marksAssigned;
-          professionWiseData.Overview[category] += marksAssigned;
+          professionWiseData[category][skill].marksAssigned += marksAssigned;
+          professionWiseData.Overview[category].marksAssigned += marksAssigned;
+          professionWiseData[category][skill].numberOfQuestions++;
+          professionWiseData.Overview[category].numberOfQuestions++;
         }
       }
       answerArray.push({
@@ -391,6 +399,12 @@ router.post("/answer", async (req, res) => {
         professionId: question.professionId,
         ip: req.ip,
       });
+    }
+    for (const category in professionWiseData) {
+      for (const skill in professionWiseData[category]) {
+        professionWiseData[category][skill] =
+          professionWiseData[category][skill].marksAssigned / professionWiseData[category][skill].numberOfQuestions;
+      }
     }
     await answerModel.insertMany(answerArray);
     return res.json({ message: "Added successfully", data: professionWiseData, profession: professionData[0] });
