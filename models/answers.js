@@ -1,11 +1,12 @@
 const mongoose = require("mongoose");
 
-// const { ObjectId } = mongoose.Types;
+const { ObjectId } = mongoose.Types;
 
 const answers = new mongoose.Schema(
   {
     question: { type: String, trim: true, required: true },
     questionId: { type: String },
+    answerId: { type: ObjectId },
     answerOptions: { type: Array, default: [], required: true },
     selectedAnswer: { type: String, trim: true, required: true },
     description: { type: String, trim: true, required: true },
