@@ -358,44 +358,7 @@ router.post("/answer", async (req, res) => {
     }
     const answerArray = [];
     let answerId = new ObjectId();
-    const professionWiseData = {};
-    professionWiseData.Overview = {};
     for (const question of allQuestions) {
-      for (const category of question.categories) {
-        if (!professionWiseData[category]) {
-          professionWiseData[category] = {};
-        }
-        if (!professionWiseData.Overview[category]) {
-          professionWiseData.Overview[category] = {
-            marksAssigned: 0,
-            numberOfQuestions: 0,
-          };
-        }
-        for (const skill of question.skills) {
-          if (!professionWiseData[category][skill]) {
-            professionWiseData[category][skill] = {
-              marksAssigned: 0,
-              numberOfQuestions: 0,
-            };
-          }
-          let marksAssigned = 0;
-          if (answers[question._id] == 1) {
-            marksAssigned = 1;
-          } else if (answers[question._id] == 2) {
-            marksAssigned = 2;
-          } else if (answers[question._id] == 3) {
-            marksAssigned = 3;
-          } else if (answers[question._id] == 4) {
-            marksAssigned = 4;
-          } else if (answers[question._id] == 5) {
-            marksAssigned = 5;
-          }
-          professionWiseData[category][skill].marksAssigned += marksAssigned;
-          professionWiseData.Overview[category].marksAssigned += marksAssigned;
-          professionWiseData[category][skill].numberOfQuestions++;
-          professionWiseData.Overview[category].numberOfQuestions++;
-        }
-      }
       answerArray.push({
         answerId,
         question: question.question,
@@ -409,14 +372,8 @@ router.post("/answer", async (req, res) => {
         ip: req.ip,
       });
     }
-    for (const category in professionWiseData) {
-      for (const skill in professionWiseData[category]) {
-        professionWiseData[category][skill] =
-          professionWiseData[category][skill].marksAssigned / professionWiseData[category][skill].numberOfQuestions;
-      }
-    }
     await answerModel.insertMany(answerArray);
-    return res.json({ message: "Added successfully", data: professionWiseData, profession: professionData[0], answerId });
+    return res.json({ message: "Added successfully", answerId });
   } catch (error) {
     return res.status(500).json({ message: error.message || "Error while updating questions" });
   }
@@ -427,8 +384,8 @@ router.get("/answer", async (req, res) => {
     const {
       query: { answerId },
     } = req;
-    if (!answerId) {
-      return res.status(500).json({ message: "Please provide the answer Id" });
+    if (!answerId || !ObjectId.isValid(answerId)) {
+      return res.status(500).json({ message: "Please provide the valid answer Id" });
     }
     const answerData = await answerModel.find({ answerId }).lean();
     if (!answerData) {
@@ -484,7 +441,7 @@ router.get("/answer", async (req, res) => {
           professionWiseData[category][skill].marksAssigned / professionWiseData[category][skill].numberOfQuestions;
       }
     }
-    return res.json({ message: "Added successfully", data: professionWiseData, profession: professionData[0] });
+    return res.json({ message: "Answers fetched successfully", data: professionWiseData, profession: professionData[0] });
   } catch (error) {
     return res.status(500).json({ message: error.message || "Error while updating questions" });
   }
