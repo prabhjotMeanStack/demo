@@ -20,7 +20,7 @@ const multipartMiddleware = multipart();
 
 const { ObjectId } = mongoose.Types;
 const openai = new OpenAI({
-  apiKey: "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",
+  apiKey: process.env.chatGPTKey
 });
 
 const router = express.Router();
