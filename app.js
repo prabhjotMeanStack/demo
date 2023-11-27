@@ -56,7 +56,7 @@ app.get('*', (req, res) => {
 var server= http.createServer(app).listen(4000, function () {
   console.log("Demo server listening on port 4000");
 });
-server.timeout = 300000;
+server.timeout = 30000000;
 
 process.on("SIGINT", function () {
   process.exit(2);
