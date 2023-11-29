@@ -4,6 +4,7 @@ const profession = new mongoose.Schema(
   {
     professionName: { type: String, trim: true },
     description: { type: String, trim: true },
+    prompt: { type: String, trim: true },
     status: { type: String, trim: true, default: "Active" },
   },
   {

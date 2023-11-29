@@ -35,7 +35,10 @@ router.get("/all", async (req, res) => {
     if (!professionId) {
       return res.status(500).json({ message: "Please provide the profession Id" });
     }
-    const professionData = await professions.find({ _id: professionId, status: "Active" });
+    const professionData = await professions.find(
+      { _id: professionId, status: "Active" },
+      { professionName: 1, description: 1 }
+    );
     if (!professionData) {
       return res.status(500).json({ message: "Invalid profession" });
     }
@@ -362,7 +365,10 @@ router.post("/answer", async (req, res) => {
     if (!professionId) {
       return res.status(500).json({ message: "Please provide the profession Id" });
     }
-    const professionData = await professions.find({ _id: professionId, status: "Active" });
+    const professionData = await professions.findOne(
+      { _id: professionId, status: "Active" },
+      { professionName: 1, description: 1 }
+    );
     if (!professionData) {
       return res.status(500).json({ message: "Invalid profession" });
     }
@@ -423,28 +429,21 @@ router.post("/answer", async (req, res) => {
         ip: req.ip,
       });
     }
-    const strengths = {};
-    const improvements = {};
     for (const category in professionWiseData) {
       for (const skill in professionWiseData[category]) {
         professionWiseData[category][skill] =
           professionWiseData[category][skill].marksAssigned / professionWiseData[category][skill].numberOfQuestions;
       }
-      // if (category != "Overview") {
-      const openaiResp = await getChatGPTData(professionWiseData[category], category, professionData[0].professionName);
-      strengths[category] = openaiResp.strengths;
-      improvements[category] = openaiResp.improvements;
-      // }
     }
     await graphModel.create({
       _id: answerId,
       graphData: professionWiseData,
       professionId,
-      strengths,
-      improvements,
+      strengths: {},
+      improvements: {},
     });
     await answerModel.insertMany(answerArray);
-    return res.json({ message: "Added successfully", answerId });
+    return res.json({ message: "Added successfully", data: professionWiseData, answerId, profession: professionData });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message || "Error while updating questions" });
@@ -463,137 +462,87 @@ router.get("/answer", async (req, res) => {
     if (!answerData) {
       return res.status(500).json({ message: "Invalid answers" });
     }
-    const professionData = await professions.find({ _id: answerData.professionId });
+    const professionData = await professions.findOne(
+      { _id: answerData.professionId },
+      { professionName: 1, description: 1, prompt: 1 }
+    );
     if (!professionData) {
       return res.status(500).json({ message: "Invalid profession" });
     }
-    for (category in answerData.graphData) {
+    const chatGptPromises = [];
+    const chatGptkeys = [];
+    for (const category in answerData.graphData) {
       if (
+        !answerData.strengths ||
         !answerData.strengths[category] ||
         answerData.strengths[category].length == 0 ||
+        !answerData.improvements ||
         !answerData.improvements[category] ||
         answerData.improvements[category].length == 0
-        //  && category != "Overview"
       ) {
-        const openaiResp = await getChatGPTData(
-          answerData.graphData[category],
-          category,
-          professionData.professionName
+        chatGptPromises.push(
+          getChatGPTData(answerData.graphData[category], category, professionData.professionName, professionData.prompt)
         );
-        answerData.strengths[category] = openaiResp.strengths;
-        answerData.improvements[category] = openaiResp.improvements;
-        await graphModel.updateOne(
-          { _id: answerId },
-          { $set: { strengths: answerData.strengths, improvements: answerData.improvements } }
-        );
+        chatGptkeys.push(category);
       }
+    }
+    if (chatGptPromises.length > 0) {
+      const result = await Promise.all(chatGptPromises);
+      if (!answerData.strengths) {
+        answerData.strengths = {};
+      }
+      if (!answerData.improvements) {
+        answerData.improvements = {};
+      }
+      chatGptkeys.forEach((item, index) => {
+        answerData.strengths[item] = result[index].strengths;
+        answerData.improvements[item] = result[index].improvements;
+      });
+      await graphModel.updateOne(
+        { _id: answerId },
+        { $set: { strengths: answerData.strengths, improvements: answerData.improvements } }
+      );
     }
     return res.json({
       message: "Answers fetched successfully",
       data: answerData.graphData,
       strengths: answerData.strengths,
       improvements: answerData.improvements,
-      profession: professionData[0],
+      profession: professionData,
     });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: error.message || "Error while updating questions" });
   }
 });
-async function getChatGPTData(graphData, category, productName) {
-  let gptquestion = `List 6 strengths and 6 improvements related to ${category} in ${productName} discipline for a person who is 1 year in the industry and has the following assessment results:\n`;
+async function getChatGPTData(graphData, category, productName, prompt) {
+  let chatgpt_skill_set = "";
   for (const skill in graphData) {
-    gptquestion += ` ${skill}: ${graphData[skill] * 20}% \n`;
+    chatgpt_skill_set += ` ${skill}: ${graphData[skill] * 20}% \n`;
   }
-  gptquestion = `${gptquestion} \n Make a direct communication, do not include the assessment score in the answer. Use a direct tone understandable for non-native speakers`;
+  if (!prompt) {
+    prompt = `List 3 strengths and 3 improvements related to chatgpt_category_name in ${productName} discipline for a person who is 1 year in the industry and has the following assessment results: chatgpt_skill_set Make a direct communication, do not include the assessment score in the answer. Use a direct tone understandable for non-native speakers`;
+  }
+  const gptquestion = prompt.replace("chatgpt_category_name", category).replace("chatgpt_skill_set", chatgpt_skill_set);
   const chatCompletion = await openai.chat.completions.create({
     messages: [{ role: "user", content: gptquestion }],
     model: "gpt-3.5-turbo",
   });
-  // const stream = await openai.chat.completions.create({
-  //   model: "gpt-4",
-  //   messages: [{ role: "user", content: gptquestion }],
-  //   stream: true,
-  // });
-  let gptanswers = chatCompletion.choices[0].message.content;
-  // for await (const chunk of stream) {
-  //   gptanswers += chunk.choices[0]?.delta?.content || "";
-  // }
-  gptanswers = gptanswers
-    .replace("improvement:", "para for Improvement:")
-    .replace("Improvements:", "para for Improvement:")
-    .replace("improvement:", "para for Improvement:")
-    .replace("Improvements:", "para for Improvement:")
-    .replace("Possible Area improvements:", "para for Improvement:")
-    .replace("Possible Areas improvements:", "para for Improvement:")
-    .replace("Possible Area Improvements:", "para for Improvement:")
-    .replace("Possible area Improvements:", "para for Improvement:")
-    .replace("Possible Areas Improvements:", "para for Improvement:")
-    .replace("Possible areas Improvements:", "para for Improvement:")
-    .replace("Possible area for improvement:", "para for Improvement:")
-    .replace("Possible Area for improvement:", "para for Improvement:")
-    .replace("Possible areas for improvement:", "para for Improvement:")
-    .replace("Possible Areas for improvement:", "para for Improvement:")
-    .replace("Possible area of improvements:", "para for Improvement:")
-    .replace("Possible Area of Improvement:", "para for Improvement:")
-    .replace("Possible areas of improvements:", "para for Improvement:")
-    .replace("Possible Areas of Improvement:", "para for Improvement:")
-    .replace("Areas for Improvement:", "para for Improvement:")
-    .replace("Area for Improvement:", "para for Improvement:")
-    .replace("areas for Improvement:", "para for Improvement:")
-    .replace("area for Improvement:", "para for Improvement:")
-    .replace("Potential area improvements:", "para for Improvement:")
-    .replace("Potential areas improvements:", "para for Improvement:")
-    .replace("Potential Area improvements:", "para for Improvement:")
-    .replace("Potential Areas improvements:", "para for Improvement:")
-    .replace("Potential Area Improvements:", "para for Improvement:")
-    .replace("Potential area Improvements:", "para for Improvement:")
-    .replace("Potential Areas Improvements:", "para for Improvement:")
-    .replace("Potential areas Improvements:", "para for Improvement:")
-    .replace("Potential area for improvement:", "para for Improvement:")
-    .replace("Potential Area for improvement:", "para for Improvement:")
-    .replace("Potential areas for improvement:", "para for Improvement:")
-    .replace("Potential Areas for improvement:", "para for Improvement:")
-    .replace("Potential area of improvements:", "para for Improvement:")
-    .replace("Potential Area of Improvement:", "para for Improvement:")
-    .replace("Potential areas of improvements:", "para for Improvement:")
-    .replace("Potential Areas of Improvement:", "para for Improvement:");
+  const gptanswers = chatCompletion.choices[0].message.content;
   console.log(gptanswers);
-  const strengths =
-    gptanswers
-      ?.split("para for Improvement:")?.[0]
-      ?.replace("Strengths:", "")
-      ?.replace("\n\n", "\n")
-      .split("\n")
-      ?.filter(
-        (item) =>
-          item != "" &&
-          item != " " &&
-          item != "Possible " &&
-          (item.includes("1.") ||
-            item.includes("2.") ||
-            item.includes("3.") ||
-            item.includes("4.") ||
-            item.includes("5.") ||
-            item.includes("6."))
-      ) || [];
-  const improvements =
-    gptanswers
-      ?.split("para for Improvement:")?.[1]
-      ?.replace("\n\n", "\n")
-      .split("\n")
-      ?.filter(
-        (item) =>
-          item != "" &&
-          item != " " &&
-          item != "Possible " &&
-          (item.includes("1.") ||
-            item.includes("2.") ||
-            item.includes("3.") ||
-            item.includes("4.") ||
-            item.includes("5.") ||
-            item.includes("6."))
-      ) || [];
+  const answerArray = gptanswers.replace("\n\n", "\n").split("\n");
+
+  const strengths = [];
+  const improvements = [];
+  for (const item of answerArray) {
+    if (item.includes("1. ") || item.includes("2. ") || item.includes("3. ")) {
+      if (strengths.length < 3) {
+        strengths.push(item);
+      } else {
+        improvements.push(item);
+      }
+    }
+  }
   return { strengths, improvements };
 }
 module.exports = router;

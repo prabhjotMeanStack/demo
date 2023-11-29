@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.get("/all", async (req, res) => {
   try {
-    const professions = await profession.find({ status: "Active" }, { professionName: 1, description: 1 });
+    const professions = await profession.find({ status: "Active" }, { professionName: 1, description: 1, prompt: 1 });
     return res.json({ message: "Professions Fetched", professions });
   } catch (error) {
     return res.status(500).json({ message: error.message || "Error while fetching professions" });
@@ -19,7 +19,7 @@ router.put("/:professionId", checkUserLoggedIn, async (req, res) => {
   try {
     const {
       params: { professionId },
-      body: { professionName, description },
+      body: { professionName, description, prompt },
     } = req;
     if (!professionId) {
       return res.status(500).json({ message: "Please provide the profession Id" });
@@ -30,11 +30,14 @@ router.put("/:professionId", checkUserLoggedIn, async (req, res) => {
     if (!description?.trim()) {
       return res.status(500).json({ message: "Please provide a valid profession description" });
     }
+    if (!prompt?.trim() || !prompt.includes('chatgpt_category_name') || !prompt.includes('chatgpt_skill_set')) {
+      return res.status(500).json({ message: "Please provide a valid prompt" });
+    }
     const professionExists = await profession.exists({ _id: professionId, status: "Active" });
     if (!professionExists) {
       return res.status(500).json({ message: "The profession doesn't exists" });
     }
-    await profession.updateOne({ _id: professionId }, { $set: { professionName, description } });
+    await profession.updateOne({ _id: professionId }, { $set: { professionName, description, prompt } });
     return res.json({ message: "Updated successfully" });
   } catch (error) {
     return res.status(500).json({ message: error.message || "Error while updating professions" });
@@ -58,23 +61,8 @@ router.delete("/:professionId", checkUserLoggedIn, async (req, res) => {
 
 router.post("/add", checkUserLoggedIn, async (req, res) => {
   try {
-    // const professionsToInsert = [
-    //   {
-    //     professionName: "Software Developer",
-    //     description: "description 1",
-    //   },
-    //   {
-    //     professionName: "Designer",
-    //     description: "description 2",
-    //   },
-    //   {
-    //     professionName: "Tester",
-    //     description: "description 3",
-    //   },
-    // ];
-    // await profession.insertMany(professionsToInsert);
     const {
-      body: { professionName, description },
+      body: { professionName, description, prompt },
     } = req;
     if (!professionName?.trim()) {
       return res.status(500).json({ message: "Please provide a valid profession name" });
@@ -82,11 +70,14 @@ router.post("/add", checkUserLoggedIn, async (req, res) => {
     if (!description?.trim()) {
       return res.status(500).json({ message: "Please provide a valid profession description" });
     }
+    if (!prompt?.trim() || !prompt.includes('chatgpt_category_name') || !prompt.includes('chatgpt_skill_set')) {
+      return res.status(500).json({ message: "Please provide a valid prompt" });
+    }
     const professionExists = await profession.exists({ professionName, status: "Active" });
     if (professionExists) {
       return res.status(500).json({ message: "The profession name already exists" });
     }
-    await profession.create({ professionName, description });
+    await profession.create({ professionName, description, prompt });
     return res.json({ message: "Added successfully" });
   } catch (error) {
     return res.status(500).json({ message: error.message || "Error while insering professions" });
