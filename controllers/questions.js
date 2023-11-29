@@ -534,11 +534,19 @@ async function getChatGPTData(graphData, category, productName, prompt) {
 
   const strengths = [];
   const improvements = [];
+  let pushing_in = "";
   for (const item of answerArray) {
-    if (item.includes("1. ") || item.includes("2. ") || item.includes("3. ")) {
-      if (strengths.length < 3) {
-        strengths.push(item);
+    if(item.includes("1. ")) {
+      if (pushing_in == "strengths") {
+        pushing_in = "improvements"
       } else {
+        pushing_in = "strengths"
+      }
+    }
+    if (item.includes("1. ") || item.includes("2. ") || item.includes("3. ") || item.includes("4. ") || item.includes("5. ") || item.includes("6. ") || item.includes("7. ") || item.includes("8. ") || item.includes("9. ") || item.includes("10. ") || item.includes("11. ") || item.includes("12. ") || item.includes("13. ") || item.includes("14. ") || item.includes("15. ")) {
+      if (pushing_in == "strengths") {
+        strengths.push(item);
+      } else if(pushing_in = "improvements") {
         improvements.push(item);
       }
     }
