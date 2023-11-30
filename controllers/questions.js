@@ -526,7 +526,7 @@ async function getChatGPTData(graphData, category, productName, prompt) {
   const gptquestion = prompt.replace("chatgpt_category_name", category).replace("chatgpt_skill_set", chatgpt_skill_set);
   const chatCompletion = await openai.chat.completions.create({
     messages: [{ role: "user", content: gptquestion }],
-    model: "gpt-3.5-turbo",
+    model: "gpt-4",
   });
   const gptanswers = chatCompletion.choices[0].message.content;
   console.log(gptanswers);
